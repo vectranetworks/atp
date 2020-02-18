@@ -20,7 +20,7 @@ setuptools.setup(
     ],
     entry_points={
           'console_scripts': [
-            'atp = atp.atp:main',
+            'atp = ATP.ATP:main',
           ],
     },
     python_requires='>=3.5',

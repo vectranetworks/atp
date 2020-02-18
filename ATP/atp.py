@@ -20,7 +20,7 @@ try:
     import validators
     import vat.vectra as vectra
     from jose import jwt
-    from config import COGNITO_BRAIN, COGNITO_TOKEN, TENANT_ID, APP_ID, APP_SECRET
+    from .config import COGNITO_BRAIN, COGNITO_TOKEN, TENANT_ID, APP_ID, APP_SECRET
 except Exception as error:
     print("\nMissing import requirements: %s\n" % str(error))
 
@@ -61,14 +61,14 @@ def query_atp(url, method, body=None, header_update=None):
         session.headers.update(header_update)
 
     if method == 'POST':
-        LOG.debug('POST headers:{}'.format(session.headers))
+        #  LOG.debug('POST headers:{}'.format(session.headers))
         LOG.debug('POST body:{}'.format(body))
         api_response = session.request(method=method, url=atp_url + url, data=body)
 
     else:
         api_response = session.request(method, atp_url + url)
 
-    if api_response.status_code == 200 and not api_response.status_code == 401:
+    if api_response.status_code == 200:
         LOG.debug('Received valid response to URL:{}'.format(atp_url + url))
         valid_response = json.loads(api_response.content)
 
@@ -80,10 +80,12 @@ def query_atp(url, method, body=None, header_update=None):
 
         return valid_response
 
+    elif api_response == 400:
+        LOG.info('MS ATP Error results:{}'.format(json.loads(api_response.content)))
+
     else:
         LOG.debug('Error results:{}'.format(json.loads(api_response.content)))
-        LOG.info('Possible authentication error/un-handled condition, exiting.')
-        exit()
+        LOG.info('Possible MS ATP authentication error/un-handled condition.')
 
 
 def query_sensor_by_ip(host):
@@ -112,9 +114,9 @@ def gen_sensor_tags(sensor_dict, hostid):
     sensor_attrib = ['computerDnsName', 'osPlatform', 'healthStatus', 'riskScore', 'exposureLevel', 'id']
     if len(sensor_dict):
 
-        if sensor_dict['value'] is None:
-            LOG.debug('Length of sensor_dict = 0')
-            tag_list.append('ATP_NoAgent')
+        if len(sensor_dict['value']) == 0:
+            LOG.debug('Length sensor_dict = 0')
+            tag_list.append('ATP_NoAgent_Or_SensorInactive')
 
         elif len(sensor_dict['value']) == 1:
             LOG.debug('Length of sensor_dict = 1')
@@ -230,9 +232,9 @@ def poll_vectra(tag=None, tc=None):
 
         tagged_hosts = session.request('GET', COGNITO_BRAIN + uri, verify=False).json()['results']
 
-        LOG.debug('Results:\n{}'.format(tagged_hosts))
         for host in tagged_hosts:
-            host_dict.update({host['id']: [host['last_source'], host['last_seen']]})
+            #  host_dict.update({host['id']: [host['last_source'], host['last_seen']]})
+            host_dict.update({host['id']: [host['last_source'], host['last_detection_timestamp']]})
     if tc:
         #  t, c = args.tc.split()
         t, c = tc[0], tc[1]

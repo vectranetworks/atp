@@ -144,7 +144,7 @@ def gen_sensor_tags(sensor_dict, hostid):
 
 def get_atp_machine_id(host):
     sensor_dict = query_sensor_by_ip(host)
-    if sensor_dict['value'] is None:
+    if len(sensor_dict['value']) == 0:
         LOG.debug('No valid host returned.')
         return None
     elif len(sensor_dict['value']) > 1:
@@ -173,8 +173,10 @@ def create_isolation_by_ip(host):
         url = 'machines/{}/isolate'.format(machine_id)
         results = query_atp(url, 'POST', isolation, header_addition)
         LOG.info('Isolated machine:{}'.format(results))
-
-    LOG.info('Unable to isolate machine:{}'.format(host))
+        return True
+    else:
+        LOG.info('Unable to isolate machine:{}'.format(host))
+        return False
 
 
 def delete_isolation_by_ip(host):
@@ -194,8 +196,10 @@ def delete_isolation_by_ip(host):
         url = 'machines/{}/unisolate'.format(machine_id)
         results = query_atp(url, 'POST', un_isolation, header_addition)
         LOG.info('Un-isolated machine:{}'.format(results))
+        return True
     else:
         LOG.info('Unable to un-isolate machine with IP:{}'.format(ip))
+        return False
 
 
 def poll_vectra(tag=None, tc=None):
@@ -327,18 +331,24 @@ def main():
             hosts = poll_vectra(args.blocktag)
             for hostid in hosts.keys():
                 LOG.debug('Requesting isolation for IP: {}'.format(hosts[hostid]))
-                create_isolation_by_ip(hosts[hostid])
+                block_success = create_isolation_by_ip(hosts[hostid])
                 tag_list = gen_sensor_tags(query_sensor_by_ip(hosts[hostid]), hostid)
-                tag_list.append('Manual block:{}'.format(datetime.now().__format__("%Y-%m-%d %H:%M")))
+
+                tag_list.append('Manual block:{}'.format(datetime.now().__format__("%Y-%m-%d %H:%M"))) \
+                    if block_success else tag_list.append('Manual block failed')
+
                 VC.set_host_tags(host_id=hostid, tags=tag_list, append=False)
 
         if args.unblocktag:
             hosts = poll_vectra(args.unblocktag)
             for hostid in hosts.keys():
                 LOG.debug('Requesting isolation rule deletion for IP: {}'.format(hosts[hostid]))
-                delete_isolation_by_ip(hosts[hostid])
+                unblock_success = delete_isolation_by_ip(hosts[hostid])
                 tag_list = gen_sensor_tags(query_sensor_by_ip(hosts[hostid]), hostid)
-                tag_list.append('Manual unblock:{}'.format(datetime.now().__format__("%Y-%m-%d %H:%M")))
+
+                tag_list.append('Manual unblock:{}'.format(datetime.now().__format__("%Y-%m-%d %H:%M"))) \
+                    if unblock_success else tag_list.append('Manual unblock failed')
+
                 VC.set_host_tags(host_id=hostid, tags=tag_list, append=False)
 
         # Pull hosts with tags and/or threat and certainty scores

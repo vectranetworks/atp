@@ -88,6 +88,14 @@ def query_atp(url, method, body=None, header_update=None):
         LOG.info('Possible MS ATP authentication error/un-handled condition.')
 
 
+def gen_short_url(long_url):
+    tiny_url = 'http://tinyurl.com/api-create.php'
+    full_url = tiny_url + '?' + urllib.parse.urlencode({"url": long_url})
+    tiny_url_response = requests.get(full_url)
+
+    return tiny_url_response.text
+
+
 def query_sensor_by_ip(host):
     # Passed a list [IP,timestamp].  Returns a sensor dictionary
     # url = "machines/findbyip(ip='192.168.18.41',timestamp=2020-02-07T01:32:05Z)"
@@ -315,6 +323,23 @@ def obtain_args():
     return parser.parse_args()
 
 
+def gen_alert_url(atp_id=None, tag_list=None):
+    if tag_list:
+        id_string = next((x for x in tag_list if re.search('^id:.*', x)), None)
+        machine_id = id_string.split(': ', 1)[1]
+    else:
+        machine_id = atp_id
+    logging.DEBUG('gen_alert_url machine_id:{}'.format(machine_id))
+    if machine_id:
+        full_url = 'https://securitycenter.windows.com/machines/{}/main'.format(machine_id)
+        alerts = query_atp('machines/{}/alserts'.format(machine_id), 'GET')
+        notes = 'Machine has {} ATP alerts.\n'.format(len(alerts['value']))
+        notes = notes + gen_short_url(full_url)
+        return notes
+    else:
+        return 'Unable to generate ATP host URL'
+
+
 @validate_config
 def main():
     args = obtain_args()
@@ -359,6 +384,7 @@ def main():
             tag_list = gen_sensor_tags(query_sensor_by_ip(hosts[hostid]), hostid)
 
             VC.set_host_tags(host_id=hostid, tags=tag_list, append=False)
+            VC.set_host_note(host_id=hostid, note=gen_alert_url(tag_list=tag_list))
 
 
 if __name__ == '__main__':

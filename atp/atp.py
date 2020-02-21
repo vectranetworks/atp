@@ -328,8 +328,8 @@ def gen_alert_url(atp_id=None, tag_list=None):
         id_string = next((x for x in tag_list if re.search('^id:.*', x)), None)
         machine_id = id_string.split(': ', 1)[1]
     else:
-        machine_id = atp_id
-    logging.DEBUG('gen_alert_url machine_id:{}'.format(machine_id))
+        machine_id = str(atp_id)
+    logging.DEBUG('gen_alert_url machine_id:{}'.format(str(machine_id)))
     if machine_id:
         full_url = 'https://securitycenter.windows.com/machines/{}/main'.format(machine_id)
         alerts = query_atp('machines/{}/alserts'.format(machine_id), 'GET')

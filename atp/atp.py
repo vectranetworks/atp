@@ -324,16 +324,18 @@ def obtain_args():
 
 
 def gen_alert_url(atp_id=None, tag_list=None):
+    machine_id = str()
     if tag_list:
         id_string = next((x for x in tag_list if re.search('^id:.*', x)), None)
-        machine_id = id_string.split(': ', 1)[1]
-    else:
-        machine_id = str(atp_id)
-    logging.DEBUG('gen_alert_url machine_id:{}'.format(str(machine_id)))
+        if id_string:
+            machine_id = id_string.split(': ', 1)[1]
+    elif atp_id:
+        machine_id = atp_id
+
     if machine_id:
         full_url = 'https://securitycenter.windows.com/machines/{}/main'.format(machine_id)
-        alerts = query_atp('machines/{}/alserts'.format(machine_id), 'GET')
-        notes = 'Machine has {} ATP alerts.\n'.format(len(alerts['value']))
+        alerts = query_atp('machines/{}/alerts'.format(machine_id), 'GET')
+        notes = 'Machine has {} ATP alerts.\nMachine\'s Security Center URL: '.format(len(alerts['value']))
         notes = notes + gen_short_url(full_url)
         return notes
     else:
@@ -363,6 +365,7 @@ def main():
                     if block_success else tag_list.append('Manual block failed')
 
                 VC.set_host_tags(host_id=hostid, tags=tag_list, append=False)
+                VC.set_host_note(host_id=hostid, note=gen_alert_url(tag_list=tag_list))
 
         if args.unblocktag:
             hosts = poll_vectra(args.unblocktag)
@@ -375,6 +378,7 @@ def main():
                     if unblock_success else tag_list.append('Manual unblock failed')
 
                 VC.set_host_tags(host_id=hostid, tags=tag_list, append=False)
+                VC.set_host_note(host_id=hostid, note=gen_alert_url(tag_list=tag_list))
 
         # Pull hosts with tags and/or threat and certainty scores
         hosts = poll_vectra(args.tag, args.tc)

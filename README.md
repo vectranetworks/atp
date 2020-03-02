@@ -35,7 +35,8 @@ pip3 install git+https://github.com/vectranetworks/atp.git
 Edit the config.py file and adjust the required variables according to your environment.  A local install will typically
  install in the following path ***~/.local/lib/\<python\>/site-packages/atp***.  Running the script without a 
  valid config in config.py will throw an exception which indicates the full path to the script and config.py file.
-
+ 
+Documentation on setting up authentication to Microsoft Defender ATP [here.](https://docs.microsoft.com/en-us/windows/security/threat-protection/microsoft-defender-atp/exposed-apis-create-app-webapp)
 
 ## Running
 
@@ -75,7 +76,7 @@ optional arguments:
   --tc TC TC            Poll for hosts with threat and certainty scores >=, eg --tc 50 50  
   --tag TAG             Enrichment host tag to search for  
   --blocktag BLOCKTAG   Block hosts with this tag  
-  --unblocktag UNBLOCKTAG Unblock hosts with this tag
+  --unblocktag UNBLOCKTAG Unblock hosts with this tag  
   --verbose             Verbose logging  
 
 

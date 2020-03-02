@@ -1,5 +1,5 @@
 __title__ = 'Microsoft Advanced Threat Protection scripted integration'
-__version__ = '0.1'
+__version__ = '1.0'
 __copyright__ = 'Vectra AI, Inc.'
 __status__ = 'Production'
 
@@ -135,13 +135,6 @@ def gen_sensor_tags(sensor_dict, hostid):
             sensor_list = sensor_dict['value']
             LOG.debug('Length of sensor_list:{}'.format(len(sensor_list)))
 
-            '''index = next((i for i, x in enumerate(sensor_list) if x['status'] == 'Online'), None)
-            if index:
-                for item in sensor_attrib:
-                    tag_list.append('{it}: {val}'.format(it=item, val=sensor_list[index][item]))
-            
-            else:
-            '''
             tag_list.append('ATP_MultipleSensors_SameIP')
 
     else:
@@ -213,28 +206,7 @@ def delete_isolation_by_ip(host):
 def poll_vectra(tag=None, tc=None):
     #  Supplied with tag and/or threat/certainty scores, returns dict of {host_id:[IP, timestamp]}
     host_dict = {}
-    '''
-    req = urllib.request.Request(url, data)
-    response = urllib.request.urlopen(req)
-    json_response = json.loads(response.read())
-    
-    session = requests.session()
-    session.headers.update({'Authorization': 'Token ' + COGNITO_TOKEN})
 
-    api_response = session.request(GET, atp_url + url)
-    
-    if tag:
-        tagged_hosts = VC.get_hosts(state='active', tags=tag).json()['results']
-        LOG.debug('Results:\n{}'.format(tagged_hosts))
-        for host in tagged_hosts:
-            host_dict.update({host['id']: [host['last_source'], host['last_seen']]})
-    if tc:
-        #  t, c = args.tc.split()
-        t, c = tc[0], tc[1]
-        tc_hosts = VC.get_hosts(state='active', threat_gte=int(t), certainty_gte=int(c)).json()['results']
-        for host in tc_hosts:
-            host_dict.update({host['id']: [host['last_source'], host['last_seen']]})
-        '''
     session = requests.session()
     session.headers.update({'Authorization': 'Token ' + COGNITO_TOKEN})
 
@@ -260,9 +232,8 @@ def poll_vectra(tag=None, tc=None):
 
 
 def get_token():
-    '''
-    Todo: Handle stale token (token updated outside of script)
-    '''
+    # Todo: Handle stale token (token updated outside of script)
+
     def generate_token():
         url = "https://login.windows.net/{}/oauth2/token".format(TENANT_ID)
         resource_app_id_uri = "https://api.securitycenter.windows.com"

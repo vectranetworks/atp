@@ -35,6 +35,12 @@ ssl._create_default_https_context = ssl._create_unverified_context
 # Setup logging
 LOG = logging.getLogger(__name__)
 
+# MS ATP Related URLs
+ATP_URL = 'https://api.securitycenter.windows.com/api/'
+RESOURCE_APP_ID_URI = "https://api.securitycenter.windows.com"
+AUTH_URL = "https://login.windows.net/{}/oauth2/token".format(TENANT_ID)
+SECURITY_CENTER_URL = 'https://securitycenter.windows.com/machines/'
+
 
 def validate_config(func):
     def config_validator():
@@ -51,8 +57,6 @@ def query_atp(url, method, body=None, header_update=None):
     # Returns the response body from the ATP query
     # Establish session and import token
 
-    atp_url = 'https://api.securitycenter.windows.com/api/'
-
     session = requests.session()
 
     session.headers.update({'Authorization': 'Bearer ' + get_token()})
@@ -63,19 +67,19 @@ def query_atp(url, method, body=None, header_update=None):
     if method == 'POST':
         #  LOG.debug('POST headers:{}'.format(session.headers))
         LOG.debug('POST body:{}'.format(body))
-        api_response = session.request(method=method, url=atp_url + url, data=body)
+        api_response = session.request(method=method, url=ATP_URL + url, data=body)
 
     else:
-        api_response = session.request(method, atp_url + url)
+        api_response = session.request(method, ATP_URL + url)
 
     if api_response.status_code == 200:
-        LOG.debug('Received valid response to URL:{}'.format(atp_url + url))
+        LOG.debug('Received valid response to URL:{}'.format(ATP_URL + url))
         valid_response = json.loads(api_response.content)
 
         return valid_response
 
     elif api_response.status_code == 201:
-        LOG.debug('Received valid response to URL:{}'.format(atp_url + url))
+        LOG.debug('Received valid response to URL:{}'.format(ATP_URL + url))
         valid_response = json.loads(api_response.content)
 
         return valid_response
@@ -235,18 +239,16 @@ def get_token():
     # Todo: Handle stale token (token updated outside of script)
 
     def generate_token():
-        url = "https://login.windows.net/{}/oauth2/token".format(TENANT_ID)
-        resource_app_id_uri = "https://api.securitycenter.windows.com"
 
         body = {
-            'resource': resource_app_id_uri,
+            'resource': RESOURCE_APP_ID_URI,
             'client_id': APP_ID,
             'client_secret': APP_SECRET,
             'grant_type': 'client_credentials'
         }
 
         data = urllib.parse.urlencode(body).encode("utf-8")
-        req = urllib.request.Request(url, data)
+        req = urllib.request.Request(AUTH_URL, data)
         response = urllib.request.urlopen(req)
         json_response = json.loads(response.read())
 
@@ -304,7 +306,7 @@ def gen_alert_url(atp_id=None, tag_list=None):
         machine_id = atp_id
 
     if machine_id:
-        full_url = 'https://securitycenter.windows.com/machines/{}/main'.format(machine_id)
+        full_url = SECURITY_CENTER_URL + '{}/main'.format(machine_id)
         alerts = query_atp('machines/{}/alerts'.format(machine_id), 'GET')
         notes = 'Machine has {} ATP alerts.\nMachine\'s Security Center URL: '.format(len(alerts['value']))
         notes = notes + gen_short_url(full_url)

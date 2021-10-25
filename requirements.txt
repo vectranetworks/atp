@@ -1,5 +1,0 @@
-vectra-api-tools
-requests
-validators
-python-jose
-urllib3

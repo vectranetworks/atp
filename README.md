@@ -1,6 +1,6 @@
-#Microsoft ATP Integration
+# Microsoft ATP Integration
 
-###This integration has been dreprecated
+### This integration has been dreprecated
 
 This integration is now available directly in Cognito Detect.  
 
